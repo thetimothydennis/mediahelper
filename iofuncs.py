@@ -43,8 +43,12 @@ def check_input_folder():
     is_folder = False
     while is_folder is False:
         if Path(f"{ingest_folder}/{input_folder_choice}").is_dir():
-            print(f"folder {ingest_folder}/{input_folder_choice} exists")
-            input_folder_choice = f"{ingest_folder}/{input_folder_choice}"
+            if input_folder_choice == ".":
+                input_folder_choice = ingest_folder
+                print(f"folder {ingest_folder} exists")
+            else:
+                print(f"folder {ingest_folder}/{input_folder_choice} exists")
+                input_folder_choice = f"{ingest_folder}/{input_folder_choice}"
             is_folder = True
         else:
             print(f"folder {input_folder_choice} does not exist, try atain")
@@ -85,9 +89,11 @@ def input_start_and_end_timestamps():
 # output functions
 def choose_output_folder():
     global output_menu_choice
-    print("\n~~~~~Choose output directory.~~~~~\n")
-    print("1. Ingest folder")
-    print("2. Output folder")
+    print("""
+    ~~~~~Choose output directory.~~~~~
+    1. Ingest folder
+    2. Output folder
+    """)
     output_menu_choice=input("Make a selection: ")
 
 def choose_output_filename():

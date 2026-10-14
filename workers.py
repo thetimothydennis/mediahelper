@@ -2,20 +2,10 @@ from pathlib import Path
 import ffmpeg
 from yt_dlp import YoutubeDL
 import iofuncs
+import helpers
 import menu
 import subprocess
 import time
-
-# create batch list for ffmpeg jobs
-
-def create_batch_list(input_folder, input_extension):
-    global file_batch_list
-    global default_batch_file
-    default_batch_file = "FilesToJoin.txt"
-    file_batch_list=list(Path(input_folder).rglob(f"*.{input_extension}"))
-    with open(f"{input_folder}/{default_batch_file}", "w", encoding="utf-8") as files_to_join:
-        for file in sorted(file_batch_list):
-            files_to_join.write(f"file '{file}'\n")
 
 # ffmpeg wrapper functions
 
@@ -28,7 +18,6 @@ def ffmpeg_trim(input_file, output_file):
     process.run()
 
 def ffmpeg_join(input_text_file, input_folder, output_folder, output_filename):
-    global file_batch_list
     input_path = f"{input_folder}/{input_text_file}"
     process = (
         ffmpeg
@@ -36,23 +25,28 @@ def ffmpeg_join(input_text_file, input_folder, output_folder, output_filename):
         .output(f"{output_folder}/{output_filename}")
     )
     process.run()
-    Path(f"{input_folder}/{input_text_file}").unlink(missing_ok=True)
+    helpers.remove_batch_file(input_folder, input_text_file)
 
-def timelapse_batch_process(input_folder, input_extension, speed_factor):
-    create_batch_list(input_folder, input_extension)
-    global file_batch_list
-    for item in file_batch_list:
+def ffmpeg_timelapse_batch_process(input_folder, input_extension, speed_factor, output_folder, output_filename):
+    PTS_batch_file = "PTS_Files_to_join.txt"
+    PTS_suffix = "_setpts.mp4"
+    helpers.create_ffmpeg_batch_file(input_folder, input_extension)
+    for item in helpers.file_batch_list:
         process = (
             ffmpeg
             .input(item)
             .setpts(f"PTS/{speed_factor}")
-            .output(f"{input_folder}/{Path(item).stem}_setpts.mp4")
+            .output(f"{input_folder}/{Path(item).stem}{PTS_suffix}")
         )
         process.run()
+    helpers.create_ffmpeg_batch_file(input_folder, input_extension, PTS_batch_file, PTS_suffix)
+    ffmpeg_join(PTS_batch_file, input_folder, output_folder, output_filename)
+    helpers.remove_files_by_ext(input_folder, PTS_suffix)
+    helpers.remove_batch_file(input_folder, helpers.default_batch_file)
 
 def ffmpeg_batch(input_folder, input_extension, output_folder):
-    file_batch_list=list(Path(input_folder).rglob(f"*.{input_extension}"))
-    for file in file_batch_list:
+    helpers.create_batch_list(input_folder, f"*.{input_extension}")
+    for file in helpers.file_batch_list:
         filepath = Path(file)
         process = (
             ffmpeg
@@ -72,7 +66,6 @@ def ffmpeg_video_to_audio(input_filename, output_folder, output_filename):
 # top level menu functions
 
 def trim_function():
-    global input_filename
     iofuncs.choose_and_check_input_file()
     iofuncs.input_start_and_end_timestamps()
     iofuncs.choose_output_file_details()
@@ -82,32 +75,19 @@ def trim_function():
 def join_function():
     iofuncs.choose_input_folder_and_extension()
     iofuncs.choose_output_file_details()
-    create_batch_list(iofuncs.input_folder_choice, iofuncs.input_extension_choice)
-    ffmpeg_join(default_batch_file, iofuncs.input_folder_choice, iofuncs.output_folder_choice, iofuncs.output_filename)
+    helpers.create_ffmpeg_batch_file(iofuncs.input_folder_choice, iofuncs.input_extension_choice)
+    ffmpeg_join(helpers.default_batch_file, iofuncs.input_folder_choice, iofuncs.output_folder_choice, iofuncs.output_filename)
     menu.menu_function()
 
 def timelapse_function():
     iofuncs.choose_input_folder_and_extension()
     iofuncs.input_speed_factor()
     iofuncs.choose_output_file_details()
-    timelapse_batch_process(iofuncs.input_folder_choice, iofuncs.input_extension_choice, iofuncs.speed_factor)
-    global file_batch_list
-    PTS_batch_file = "PTS_Files_to_join.txt"
-    PTS_suffix = "_setpts.mp4"
-    with open(f"{iofuncs.input_folder_choice}/{PTS_batch_file}", "w", encoding="utf-8") as pts_files:
-        for item in sorted(file_batch_list):
-            filepath = Path(item)
-            pts_files.write(f"file '{filepath.parent}/{filepath.stem}{PTS_suffix}'\n")
-    ffmpeg_join(PTS_batch_file, iofuncs.input_folder_choice, iofuncs.output_folder_choice, iofuncs.output_filename)
-    remove_files = Path(f"{iofuncs.input_folder_choice}").rglob(f"*{PTS_suffix}")
-    for file in remove_files:
-        Path(file).unlink()
-    Path(f"{iofuncs.input_folder_choice}/{default_batch_file}").unlink(missing_ok=True)
+    ffmpeg_timelapse_batch_process(iofuncs.input_folder_choice, iofuncs.input_extension_choice, iofuncs.speed_factor, iofuncs.output_folder_choice, iofuncs.output_filename)
     menu.menu_function()
 
 def batch_h264():
-    iofuncs.choose_and_check_input_folder()
-    iofuncs.choose_input_file_extension()
+    iofuncs.choose_input_folder_and_extension()
     iofuncs.choose_and_verify_output_folder()
     ffmpeg_batch(iofuncs.input_folder_choice, iofuncs.input_extension_choice, iofuncs.output_folder_choice)
     menu.menu_function()

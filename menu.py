@@ -8,16 +8,22 @@ break_point=True
 def menu_function():
     global break_point
     subprocess.run('clear')
-    print("\n~~~~~~~~~~~~~~~~~~~~ Media Utilities ~~~~~~~~~~~~~~~~~~~~\n")
-    print("!!!!!  NOTE: All names of files and folders you want to use in this \nprogram must be alphanumeric. The script will not work if there are \nspaces in the file or folder names. !!!!!\n\n")
-    print("1. Trim utility")
-    print("2. Join utility")
-    print("3. Timelapse utility")
-    print("4. Batch H264 utility")
-    print("5. YouTube download utility")
-    print("6. Convert video to audio utility")
-    print("7. Convert ODT to PDF utility")
-    print("Q. Exit this program\n")
+    print("""
+    ~~~~~~~~~~~~~~~~~~~~~~~~~ Media Utilities ~~~~~~~~~~~~~~~~~~~~~~~~~
+    !!!!!  NOTE: All names of files and folders you want to use in this 
+    program must be alphanumeric. The script will not work if there are
+    nspaces in the file or folder names. !!!!!
+
+
+    1. Trim utility
+    2. Join utility
+    3. Timelapse utility
+    4. Batch H264 utility
+    5. YouTube download utility
+    6. Convert video to audio utility
+    7. Convert ODT to PDF utility
+    Q. Exit this program
+    """)
     menu_choice=input("Choose your destiny: ")
       # menu choice cases
     
